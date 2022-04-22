@@ -1,0 +1,172 @@
+
+rm(list=ls())
+#Pick birth greater than 0 (95CL)
+BD=read.csv("./birth-phylum/CK/birthabove0anddeath1_DAY1-CK.csv",header=T,row.names = 1,check.names=F)#########
+
+BD=BD[BD$Y95CU.y<0&BD$X95CL.x>0,]
+
+head(BD)
+B<-BD[,1:4]
+D<-BD[,c(1,8,9,10)]
+
+##calculate the growth rate
+
+sam1 <- read.table('clearing_data/samdata1.txt', sep='\t', header=T, row.names=1, comment.char='', check.names=F)
+
+sam=sam1[which(sam1$day == "1"&sam1$fertilizer == "CK"&sam1$isotope =="18O"), ]###############################################################################
+head(sam)
+#str(sam)
+
+otu <- read.table('clearing_data/otutab.txt', sep='\t', header=T, comment.char='', check.names=F)
+rownames(otu) <- otu$`#OTU ID`
+otu <- otu[,-1]
+
+otu=otu[,rownames(sam)]#head(otu[,rownames(sam)])
+#otu=otu[which(rowSums(otu)>0),]
+otu <- as.matrix(otu)
+otu[1:10,1:10]
+
+#Turning 'otu' into relative abundance
+library("questionr")
+otu1 <- cprop(otu)
+rel_otu=as.data.frame.array(otu1[!rownames(otu1) %in% c("Total") , -which(colnames(otu1) %in% c("All"))])
+#head(rel_otu)
+#head(otu1)
+#write.csv(rel_otu,"rel_otu.csv")
+#write.csv(otu1,"otu1.csv")
+rel_otu1=rel_otu/100
+#write.csv(rel_otu1,"rel_otu1.csv")
+#head(rel_otu1)
+
+str(sam)
+row.names(sam)
+
+rel_otu[,1]=rel_otu1[,1]*sam[1,2]
+rel_otu[,2]=rel_otu1[,2]*sam[2,2]
+rel_otu[,3]=rel_otu1[,3]*sam[3,2]
+rel_otu[,4]=rel_otu1[,4]*sam[4,2]
+rel_otu[,5]=rel_otu1[,5]*sam[5,2]
+rel_otu[,6]=rel_otu1[,6]*sam[6,2]
+rel_otu[,7]=rel_otu1[,7]*sam[7,2]
+rel_otu[,8]=rel_otu1[,8]*sam[8,2]
+rel_otu[,9]=rel_otu1[,9]*sam[9,2]
+rel_otu[,10]=rel_otu1[,10]*sam[10,2]
+rel_otu[,11]=rel_otu1[,11]*sam[11,2]
+rel_otu[,12]=rel_otu1[,12]*sam[12,2]
+rel_otu[,13]=rel_otu1[,13]*sam[13,2]
+rel_otu[,14]=rel_otu1[,14]*sam[14,2]
+rel_otu[,15]=rel_otu1[,15]*sam[15,2]
+rel_otu[,16]=rel_otu1[,16]*sam[16,2]
+rel_otu[,17]=rel_otu1[,17]*sam[17,2]
+rel_otu[,18]=rel_otu1[,18]*sam[18,2]
+rel_otu[,19]=rel_otu1[,19]*sam[19,2]
+rel_otu[,20]=rel_otu1[,20]*sam[20,2]
+rel_otu[,21]=rel_otu1[,21]*sam[21,2]
+rel_otu[,22]=rel_otu1[,22]*sam[22,2]
+rel_otu[,23]=rel_otu1[,23]*sam[23,2]
+rel_otu[,24]=rel_otu1[,24]*sam[24,2]
+rel_otu[,25]=rel_otu1[,25]*sam[25,2]
+rel_otu[,26]=rel_otu1[,26]*sam[26,2]
+rel_otu[,27]=rel_otu1[,27]*sam[27,2]
+rel_otu[,28]=rel_otu1[,28]*sam[28,2]
+rel_otu[,29]=rel_otu1[,29]*sam[29,2]
+rel_otu[,30]=rel_otu1[,30]*sam[30,2]
+rel_otu[,31]=rel_otu1[,31]*sam[31,2]
+rel_otu[,32]=rel_otu1[,32]*sam[32,2]
+rel_otu[,33]=rel_otu1[,33]*sam[33,2]
+#head(rel_otu)
+
+xy=rel_otu
+
+xy$Nit1=rowSums(xy[,1:11])
+xy$Nit2=rowSums(xy[,12:22])
+xy$Nit3=rowSums(xy[,23:33])
+head(xy)
+#write.csv(xy,"xy.csv")
+
+#merge
+
+xy$OTU=rownames(xy)
+head(B)
+Brate1=merge(B[,c(2,which(colnames(B)=="OTU"))],xy[,c(34,which(colnames(xy)=="OTU"))],by="OTU",all.x=T)
+head(Brate1)
+colnames(Brate1)=c("OTU","B_1","Nit_1")
+Brate1$dNi1=Brate1$Nit_1*(1-exp(-Brate1$B_1*1))/1#######
+
+Brate2=merge(B[,c(3,which(colnames(B)=="OTU"))],xy[,c(35,which(colnames(xy)=="OTU"))],by="OTU",all.x=T)
+head(Brate2)
+colnames(Brate2)=c("OTU","B_2","Nit_2")
+Brate2$dNi2=Brate2$Nit_2*(1-exp(-Brate2$B_2*1))/1#######
+
+Brate3=merge(B[,c(4,which(colnames(B)=="OTU"))],xy[,c(36,which(colnames(xy)=="OTU"))],by="OTU",all.x=T)
+head(Brate3)
+colnames(Brate3)=c("OTU","B_3","Nit_3")
+Brate3$dNi3=Brate3$Nit_3*(1-exp(-Brate3$B_3*1))/1#######
+
+e=merge(Brate1[,c(4,which(colnames(Brate1)=="OTU"))],Brate2[,c(4,which(colnames(Brate2)=="OTU"))],by="OTU",all=T)
+
+Brate_all=merge(e,Brate3[,c(4,which(colnames(Brate3)=="OTU"))],by="OTU",all=T)
+head(Brate_all)
+
+Brate_all$N_mean=rowMeans(Brate_all[,2:4])
+
+#合并物种信息
+
+tax <- read.table('clearing_data/taxonomy-clean.txt', sep='\t', header=T, comment.char='', check.names=F)
+head(tax)
+rownames(tax) <- tax$`OTUID`
+tax <- tax[,-1]
+tax$OTU=rownames(tax)
+
+ABC=merge(Brate_all,tax[,c(2,3,which(colnames(tax)=="OTU"))],by="OTU",all.x=T)
+head(ABC)
+
+pro=ABC[which(ABC$Phylum=="Proteobacteria"),]
+pro$Phylum1=pro$Class
+
+unpro=ABC[which(ABC$Phylum!="Proteobacteria"),]
+unpro$Phylum1=unpro$Phylum
+pro=as.data.frame(pro)
+unpro=as.data.frame(unpro)
+new_phy=rbind(pro,unpro) 
+head(new_phy)
+str(new_phy)
+str(B)
+
+new_phy$N_rela=new_phy$N_mean/sum(new_phy$N_mean)
+head(new_phy)
+
+
+Phylum=aggregate(new_phy[,c(2:5,9)],list(new_phy$Phylum1),sum)
+head(Phylum)
+Habundance=Phylum[which(Phylum$Group.1=="Alphaproteobacteria"|Phylum$Group.1=="Betaproteobacteria"|Phylum$Group.1=="Gammaproteobacteria"|Phylum$Group.1=="Deltaproteobacteria"|Phylum$Group.1=="Actinobacteria"|Phylum$Group.1=="Acidobacteria"|Phylum$Group.1=="Chloroflexi"|Phylum$Group.1=="Firmicutes"|Phylum$Group.1=="Bacteroidetes"|Phylum$Group.1=="Gemmatimonadetes"|Phylum$Group.1=="Unassigned"),]
+
+Labundance=Phylum[which(Phylum$Group.1!="Alphaproteobacteria"&Phylum$Group.1!="Betaproteobacteria"&Phylum$Group.1!="Gammaproteobacteria"&Phylum$Group.1!="Deltaproteobacteria"&Phylum$Group.1!="Actinobacteria"&Phylum$Group.1!="Acidobacteria"&Phylum$Group.1!="Chloroflexi"&Phylum$Group.1!="Firmicutes"&Phylum$Group.1!="Bacteroidetes"&Phylum$Group.1!="Gemmatimonadetes"&Phylum$Group.1!="Unassigned"),]
+
+df=cbind("Low_abundance",sum(Labundance$dNi1), sum(Labundance$dNi2), sum(Labundance$dNi3), sum(Labundance$N_mean),sum(Labundance$N_rela))
+colnames(df)=c("Group.1","dNi1","dNi2","dNi3","N_mean","N_rela")
+df=as.data.frame.array(df)
+
+Phylum_new=rbind(Habundance,df)
+Phylum_new$treatment="CW_DAY6"###########################
+write.csv(Phylum_new,"Brate_CW_DAY6_Phylum-re.csv")#######################
+
+#===========================================
+
+#ggplot2 
+Phylum1= read.csv("./death-phylum/death_rate.csv",header=T, row.names=1)
+Phylum1
+library(ggplot2)
+p = ggplot(Phylum1, aes(x=variable, y = N_rela, fill = tax )) + 
+  geom_bar(stat = "identity",position="stack", width=1)+ 
+  theme(strip.background = element_blank())+
+  theme_bw() +##删除x轴坐标
+  xlab("")+ylab("Death rate (16S rRNA gene copies/d)")+
+  ggtitle("zong-death")+
+  #theme_classic()+theme(axis.text.x=element_text(angle=45,vjust=1, hjust=1))+##将x轴坐标倾斜45°
+  scale_fill_manual(values =rev(c("T-Alphaproteobacteria"="#000000","S-Betaproteobacteria"="#00FF00","R-Gammaproteobacteria"="#FF8C00","Q-Deltaproteobacteria"="#1E90FF","P-Actinobacteria"="#00F0F0","O-Acidobacteria"="#DC143C","N-Chloroflexi"="#228B22","M-Firmicutes"="#DF536B","L-Bacteroidetes"="#F5C710","K-Nitrospirae"="#008080","J-Planctomycetes"="#AA3377","I-Gemmatimonadetes"="#000180","H-Aminicenantes"="#FFFACD","G-Armatimonadetes"="#800000","F-candidate_division_WPS-1"="#222255","E-Ignavibacteriae"="#BBCCEE","D-Verrucomicrobia"="#999933","C-Latescibacteria"="#8A2BE2","B-Low_abundance"="#800080","A-Unassigned"="#808080"))) +
+  theme(panel.grid = element_blank(), panel.background = element_rect(color = 'black', fill = 'transparent')) +
+  theme(legend.title = element_blank())
+p
+ggsave("death_rela.pdf",device=cairo_pdf,width=8,height=8)
+###

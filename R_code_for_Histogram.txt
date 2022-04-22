@@ -1,0 +1,22 @@
+
+rm(list=ls())
+library(ggplot2)
+df<-read.table("clipboard",header=T)
+head(df)
+p=ggplot(data=df,aes(variable,N_mean))+
+  stat_summary(geom="bar",fun=mean,aes(fill=variable))+ylim(0,200000)+
+      theme_bw()+
+  scale_fill_manual(values=c("#DCDCDC","#808080","#000000","#DCDCDC","#808080","#000000","#DCDCDC","#808080","#000000","#DCDCDC","#808080","#000000"))+theme(legend.title=element_blank())+labs(x="Treatment",y="death rate (16S rRNA gene copies/d)",title=df$tax,caption="")+theme(panel.grid=element_blank())
+p
+
+
+ggsave("death_Bacteroidetes_列统一.pdf",device=cairo_pdf,width=8,height=8)#####
+
+
+#geom_signif(comparisons=list(c("ACK_DAY1","T_DAY1"),c("ACK_DAY3","T_DAY3")),test='t.test',y_position=c(10,17,16),map_signif_level=T)
+
++ylim(-4587000,0)
+
+
+
+

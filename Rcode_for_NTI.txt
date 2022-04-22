@@ -1,0 +1,20 @@
+setwd("E:\\1 Knowledge\\R-run\\qSIP-增温增CO2\\1总体系统发育保守\\NTI")
+
+rm(list=ls())
+
+library(picante) 
+phylo<-read.tree("[FastTree-rm1104.nwk") 
+plot(phylo)
+comm=read.table("clipboard",header=T) 
+comm=t(comm)#Horizontal for treatment and vertical for OTUs before transposition
+pd(comm, phylo,include.root=FALSE)
+write.csv(pd,"cR-pd.csv")
+cophenetic(phylo)
+nri=ses.mpd(comm,cophenetic(phylo),null.model="taxa.labels",abundance.weighted=FALSE,runs=999)  
+nti=ses.mntd(comm,cophenetic(phylo),null.model="taxa.labels",abundance.weighted=FALSE,runs=999) 
+NRI=-nri$mpd.obs.z 
+NTI=-nti$mntd.obs.z 
+write.csv(NRI, "4Tf-NRI1.csv")
+write.csv(NTI, "delay-NTI1.csv")
+
+

@@ -1,0 +1,535 @@
+###RY双增qSIP代码
+##R 3.6.2
+rm(list=ls())
+setwd('E:/1 Knowledge/R-run/qSIP-增温增CO2')
+###
+###########Buoyancy density chart############
+a <- read.table('clearing_data/samdata1.txt',header=T,row.names=1,sep="\t")
+head(a)
+##选择其中一个
+N=a[which(a$fertilizer=="CK"& a$day=="1"),]##CK/1DAY
+N=a[which(a$fertilizer=="CK"& a$day=="3"),]##N0/3DAY
+N=a[which(a$fertilizer=="CK"& a$day=="6"),]##N0/6DAY
+
+N=a[which(a$fertilizer=="T"& a$day=="1"),]##N180/1DAY
+N=a[which(a$fertilizer=="T"& a$day=="3"),]##N180/3DAY
+N=a[which(a$fertilizer=="T"& a$day=="6"),]##N180/6DAY
+
+N=a[which(a$fertilizer=="CE"& a$day=="1"),]##N360/1DAY
+N=a[which(a$fertilizer=="CE"& a$day=="3"),]##N360/3DAY
+N=a[which(a$fertilizer=="CE"& a$day=="6"),]##N360/6DAY
+
+N=a[which(a$fertilizer=="CW"& a$day=="1"),]##N360/1DAY
+N=a[which(a$fertilizer=="CW"& a$day=="3"),]##N360/3DAY
+N=a[which(a$fertilizer=="CW"& a$day=="6"),]##N360/6DAY
+
+
+####Draw two lines O16,O18 treatments and add cross error line
+library("Rmisc")
+####
+b<- summarySE(N, measurevar="proportion", groupvars=c("treatment1","isotope"))
+b
+c<- summarySE(N, measurevar="density_g_ml", groupvars=c("treatment1","isotope"))
+c
+names(c)= c("treatment1","isotope", "N", "density", "sd1","se1", "ci1")
+d<-merge(b,c,by=c("treatment1","isotope"))
+library("ggplot2")
+
+q1<-ggplot(data=d, aes(x=density, y=proportion, group=isotope, shape=isotope,colour=isotope)) +
+  scale_colour_manual(values=c("O16"="#b30000","O18"="#BC75AF"))+
+  geom_errorbar(aes(ymin=proportion-se,ymax=proportion+se),width=.001,size=1)+
+  geom_errorbarh(aes(xmax=density+se1,xmin=density-se1),height=0.005,size=1)+
+  geom_line(size=1) + 
+  geom_point(size=1, fill="white") +
+  scale_shape_manual(values=c(22,21))+
+  xlab("Density(g/ml)") +
+  ylab("Proportion 16S rRNA gene abundance") +
+  ggtitle("CK_1DAY")+
+  ## N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+  theme(title= element_text(size=15, family="myFont", color="black", face= "bold", vjust=0.5, hjust=0.5))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  scale_colour_hue(name="isotope", breaks=c("O16", "O18"), labels=c("O16", "O18")) +   # Use darker colors, lightness=40
+  theme_bw() +
+  theme(legend.position="none")+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line=element_line(colour="black",size=1))+
+  theme(legend.position="none")+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank())+
+  theme(axis.text= element_text(size=12, family="myFont", color="black", face= "bold", vjust=0.5, hjust=0.5),
+        element_line(colour="black",size=1))+
+  xlim(1.70,1.74)+
+  ylim(0,0.4)+
+  theme(legend.justification=c(1,1),
+        legend.position=c(1,1))
+q1
+ggsave("./Fig/浮力密度_CK_1DAY.pdf",device=cairo_pdf,width=4,height=4)
+## N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+####
+########### 计算EAF和出生率死亡率以及净生长速率 ######
+library(phyloseq)
+# load data in
+sam1 <- read.table('clearing_data/samdata1.txt', sep='\t', header=T, row.names=1, comment.char='', check.names=F)
+##选择其中一个
+sam=sam1[which(sam1$day == "1"&sam1$fertilizer == "CK"|sam1$day =="0"&sam1$fertilizer == "CK"), ]##N0/1DAY
+sam=sam1[which(sam1$day == "3"&sam1$fertilizer == "CK"|sam1$day =="0"&sam1$fertilizer == "CK"), ]##N0/3DAY
+sam=sam1[which(sam1$day == "6"&sam1$fertilizer == "CK"|sam1$day =="0"&sam1$fertilizer == "CK"), ]##N0/6DAY
+
+sam=sam1[which(sam1$day == "1"&sam1$fertilizer == "T"|sam1$day =="0"&sam1$fertilizer == "T"), ]##N180/1DAY
+sam=sam1[which(sam1$day == "3"&sam1$fertilizer == "T"|sam1$day =="0"&sam1$fertilizer == "T"), ]##N180/3DAY
+sam=sam1[which(sam1$day == "6"&sam1$fertilizer == "T"|sam1$day =="0"&sam1$fertilizer == "T"), ]##N180/6DAY
+
+sam=sam1[which(sam1$day == "1"&sam1$fertilizer == "CE"|sam1$day =="0"&sam1$fertilizer == "CE"), ]##N360/1DAY
+sam=sam1[which(sam1$day == "3"&sam1$fertilizer == "CE"|sam1$day =="0"&sam1$fertilizer == "CE"), ]##N360/3DAY
+sam=sam1[which(sam1$day == "6"&sam1$fertilizer == "CE"|sam1$day =="0"&sam1$fertilizer == "CE"), ]##N360/6DAY
+
+sam=sam1[which(sam1$day == "1"&sam1$fertilizer == "CW"|sam1$day =="0"&sam1$fertilizer == "CW"), ]##N360/1DAY
+sam=sam1[which(sam1$day == "3"&sam1$fertilizer == "CW"|sam1$day =="0"&sam1$fertilizer == "CW"), ]##N360/3DAY
+sam=sam1[which(sam1$day == "6"&sam1$fertilizer == "CW"|sam1$day =="0"&sam1$fertilizer == "CW"), ]##N360/6DAY
+
+head(sam)
+
+otu <- read.table('clearing_data/otutab.txt', sep='\t', header=T, comment.char='', check.names=F)
+rownames(otu) <- otu$`#OTU ID`
+otu <- otu[,-1]
+#Filter by abundance threshold
+otu <- otu[rowSums(otu)/sum(otu)>=(0.005/100),]
+otu=otu[,rownames(sam)]
+otu=otu[which(rowSums(otu[,1:3])>0),]
+otu <- as.matrix(otu)
+otu[1:10,1:10]
+
+tax <- read.table('clearing_data/taxonomy-clean.txt', sep='\t', header=T, comment.char='', check.names=F)
+rownames(tax) <- tax$`OTUID`
+tax <- tax[,-1]
+tax=tax[rownames(otu),]
+tax <- as.matrix(tax)
+tax[1:5,1:5]
+
+# combine into phyloseq data
+dat <- phyloseq(otu_table(otu, taxa_are_rows=T),
+                tax_table(tax),
+                sample_data(sam))
+
+# I like to save phyloseq data here and make a new file for qSIP analysis
+save(dat, file='process/phyloseq_data_CW_6DAY.RData')
+#N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+
+# devtools::install_github('bramstone/qsip', ref='master')
+library(qsip)
+
+load('process/phyloseq_data_CK_1DAY.RData')
+#N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+
+# specify your qSIP data
+qsip_dat <- specify_qsip(dat,
+                         density='density_g_ml',
+                         abund='qpcr_abund',
+                         rep_id='sample_id',
+                         rep_group='fertilizer',
+                         iso='18O',
+                         iso_trt='isotope',
+                         timepoint='day')
+
+# specify frequency filtering criteria
+qsip_dat@qsip@filter_levels <- create_filters(3, 6, soft=1)##
+# atom excess fraction (AEF) or atom percent excess (APE),correction=F或T
+qsip_dat1 <- calc_excess(qsip_dat,
+                         separate_label=T,
+                         filter=T,
+                         correction=F)
+
+atom_excess <- qsip_dat1@qsip[['atom_excess']]
+
+write.csv(atom_excess,'process/AEF_CW_6DAY.csv')
+#N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+
+# per-capita growth,correction=F或T
+qsip_dat2 <- calc_pop(qsip_dat,
+                      separate_label=T,
+                      filter=T,
+                      correction=F)
+
+death_rates <- qsip_dat2@qsip[['death_rate']]
+growth_rates <- qsip_dat2@qsip[['growth_rate']]
+birth_rates <- qsip_dat2@qsip[['birth_rate']]
+
+write.csv(death_rates,'process/death_rates_CW_6DAY.csv')
+write.csv(growth_rates,'process/growth_rates_CW_6DAY.csv')
+write.csv(birth_rates,'process/birth_rates_CW_6DAY.csv')
+#N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+####
+##########Calculate the confidence interval###
+
+library(bootstrap)
+set.seed(113)
+
+library(boot)
+set.seed(1234)
+
+##选择其中一个
+N=atom_excess
+N=death_rates
+N=growth_rates
+N=birth_rates
+
+N =na.omit(N)
+M=as.data.frame.array(N)
+G=as.data.frame(matrix(1:nrow(N),nrow=nrow(N),ncol=3))
+
+
+for (i in 1:(nrow(N)))
+{
+  X=N[i,]
+  b <- boot(X, function(u,i) mean(u[i]), R = 1000)
+  CI=boot.ci(b, index=1)#,type = c("norm", "basic", "perc")
+  CL <- CI$normal[2]
+  CU <- CI$normal[3]
+  G[i,c("V1")]=mean(N[i,])
+  G[i,c("V2")] =CL
+  G[i,c("V3")] =CU
+}
+
+P=cbind(M,G)
+library(tidyverse)
+P=plyr::rename(P, c("V1"="mean","V2"="95CL","V3"="95CU"))
+
+write.csv(P,'result/12AEF_CW_6DAY-conf.csv')
+write.csv(P,'result/12death_rates_CW_6DAY-conf.csv')
+write.csv(P,'result/12growth_rates_CW_6DAY-conf.csv')
+write.csv(P,'result/12birth_rates_CW_6DAY-conf.csv')
+#N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+###
+########### EAF plot#################
+##OTU_level
+###Excess atom fraction 
+library(ggnewscale)
+library(ggplot2)
+windowsFonts(myFont=windowsFont("Arial"))#
+### 
+spe<-read.csv("result/AEF_CK_1DAY-conf.csv",header=T,row.names = 1,check.names=F)
+##N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+
+head(spe)
+tax <- read.table('clearing_data/taxonomy_clean.txt', sep='\t', header=T, comment.char='', check.names=F)
+rownames(tax) <- tax$`OTUID`
+tax <- tax[,-1]
+tax=tax[rownames(spe),]
+tax[1:5,1:5]
+pro=tax[which(tax$Phylum=="Proteobacteria"),]
+pro2=pro[,c(3,7)]
+names(pro2)<-c("Phylum","Species")
+pro2=as.data.frame(pro2)
+unpro=tax[which(tax$Phylum!="Proteobacteria"),]
+unpro2=unpro[,c(2,7)]
+unpro2=as.data.frame(unpro2)
+new_phy=rbind(pro2,unpro2) 
+names(new_phy)<-c("Phylum1","Species")
+head(new_phy)
+imp=merge(tax[,c(1:2)],new_phy,by="row.names",all=T)
+rownames(imp)=imp$Row.names
+imp=merge(imp[,c(3:4)],spe,by="row.names",all=T)
+rownames(imp)=imp$Row.names
+imp$group = ifelse(imp$`95CL` <= "0","B","A")
+imp=as.data.frame.array(imp)
+#imp=imp[order(imp$Phylum,imp$Phylum1,imp$mean,decreasing = F),]
+imp=imp[order(imp$Phylum1,imp$mean,decreasing = F),]
+
+for (i in 1:(nrow(imp)-1))
+{imp[i,]$Row.names = ifelse(as.data.frame.array(imp[i,])$Phylum1 != 
+                              as.data.frame.array(imp[i+1,])$Phylum1, 
+                            as.data.frame.array(imp[i,])$Phylum1, " ")}
+imp[nrow(imp),]$Row.names=as.data.frame.array(imp[nrow(imp),])$Phylum1
+
+head(imp)
+##删除 Unassigned
+imp=imp[-which(imp$Phylum1=="Unassigned"),]
+
+N=c(1:nrow(imp))
+imp1=cbind(imp,N)
+for (i in 1:(nrow(imp1)))
+{imp1[i,]$N = ifelse(imp1[i,]$Row.names == " ",5*i, 5*i+5)}
+head(imp1)
+----------------------------------------------------
+spe<-read.csv("result/1AEF_CK_1DAY-conf.csv",header=T,row.names = 1,check.names=F)
+spe=imp1
+library(dplyr)
+spe=rename(spe,'CL'=`95CL`)
+spe=rename(spe,'CU'=`95CU`)
+pd <- position_dodge(0.5) 
+A=spe[spe$group=="A",]        
+B=spe[spe$group=="B",]
+p9<-ggplot(spe, aes(x=mean, y=N))+ 
+  geom_point(data=B,position=pd, size=2, shape=21,aes(colour=Phylum1,fill=group))+
+  scale_fill_manual(values =alpha(("black"),0.4))+
+  scale_color_manual(values=c("Acetothermia"="#3C3A8D","Acidobacteria"="#BC75AF",
+                              "Actinobacteria"="#b2e2e2","Armatimonadetes"="#000000",
+                              "Alphaproteobacteria"="#98DF8A","Aminicenantes"="#AEC7E8",
+                              "Bacteroidetes"="#44A8DB","BRC1"="#57B78C","Betaproteobacteria"="#17BECF",
+                              "candidate_division_WPS-1"="#EA711B","candidate_division_WPS-2"="#CECE05",
+                              "Candidatus_Saccharibacteria"="#D72226","Chlamydiae"="#AA9953",
+                              "Chloroflexi"="#093A3A","Cyanobacteria"="#02759E",
+                              "Deltaproteobacteria"="#4169E1","Deinococcus-Thermus"="#3A398C",
+                              "Firmicutes"="#74B662","Gemmatimonadetes"="#FFBB78FF",
+                              "Gemmatimonadetes"="#9370DB","Gammaproteobacteria"="#0000CD",
+                              "Ignavibacteriae"="#B22222","Latescibacteria"="#B53C0D",
+                              "Microgenomates"="#C49C94FF","Nitrospirae"="#03F1F7",
+                              "Oligoflexia"="#FFEBCD","Spirochaetes"="#808000",
+                              "Planctomycetes"="#F962C3","Proteobacteria"="#F95A5A",
+                              "Tenericutes"="#0808B7","Verrucomicrobia"="#144404",
+                              "Unassigned"="#808080","Low abundance"="#D2B48C"))+
+  new_scale_fill() +#
+  new_scale_color() +###Very important, add another figure, color reset
+  geom_point(data=A,position=pd, size=2, shape=21, colour="black",aes(fill=Phylum1))+ 
+  scale_fill_manual(values=c("Acetothermia"="#3C3A8D","Acidobacteria"="#BC75AF",
+                             "Actinobacteria"="#b2e2e2","Armatimonadetes"="#000000",
+                             "Alphaproteobacteria"="#98DF8A","Aminicenantes"="#AEC7E8",
+                             "Bacteroidetes"="#44A8DB","BRC1"="#57B78C","Betaproteobacteria"="#17BECF",
+                             "candidate_division_WPS-1"="#EA711B","candidate_division_WPS-2"="#CECE05",
+                             "Candidatus_Saccharibacteria"="#D72226","Chlamydiae"="#AA9953",
+                             "Chloroflexi"="#093A3A","Cyanobacteria"="#02759E",
+                             "Deltaproteobacteria"="#4169E1","Deinococcus-Thermus"="#3A398C",
+                             "Firmicutes"="#74B662","Gemmatimonadetes"="#FFBB78FF",
+                             "Gemmatimonadetes"="#9370DB","Gammaproteobacteria"="#0000CD",
+                             "Ignavibacteriae"="#B22222","Latescibacteria"="#B53C0D",
+                             "Microgenomates"="#C49C94FF","Nitrospirae"="#03F1F7",
+                             "Oligoflexia"="#FFEBCD","Spirochaetes"="#808000",
+                             "Planctomycetes"="#F962C3","Proteobacteria"="#F95A5A",
+                             "Tenericutes"="#0808B7","Verrucomicrobia"="#144404",
+                             "Unassigned"="#808080","Low abundance"="#D2B48C"))+
+  geom_errorbarh(data=B,aes(xmin=CL, xmax=CU,alpha=0.5), height=0, position=pd,size=1,colour="grey")+
+  geom_errorbarh(data=A,aes(xmin=CL, xmax=CU,colour=Phylum1,alpha=0.5), height=0, position=pd,size=1)+
+  scale_colour_manual(values=c("Acetothermia"="#3C3A8D","Acidobacteria"="#BC75AF",
+                               "Actinobacteria"="#b2e2e2","Armatimonadetes"="#000000",
+                               "Alphaproteobacteria"="#98DF8A","Aminicenantes"="#AEC7E8",
+                               "Bacteroidetes"="#44A8DB","BRC1"="#57B78C","Betaproteobacteria"="#17BECF",
+                               "candidate_division_WPS-1"="#EA711B","candidate_division_WPS-2"="#CECE05",
+                               "Candidatus_Saccharibacteria"="#D72226","Chlamydiae"="#AA9953",
+                               "Chloroflexi"="#093A3A","Cyanobacteria"="#02759E",
+                               "Deltaproteobacteria"="#4169E1","Deinococcus-Thermus"="#3A398C",
+                               "Firmicutes"="#74B662","Gemmatimonadetes"="#FFBB78FF",
+                               "Gemmatimonadetes"="#9370DB","Gammaproteobacteria"="#0000CD",
+                               "Ignavibacteriae"="#B22222","Latescibacteria"="#B53C0D",
+                               "Microgenomates"="#C49C94FF","Nitrospirae"="#03F1F7",
+                               "Oligoflexia"="#FFEBCD","Spirochaetes"="#808000",
+                               "Planctomycetes"="#F962C3","Proteobacteria"="#F95A5A",
+                               "Tenericutes"="#0808B7","Verrucomicrobia"="#144404",
+                               "Unassigned"="#808080","Low abundance"="#D2B48C"))+
+  theme_bw()+
+  theme(legend.position="none")+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line=element_line(colour="black",size=1))+
+  theme(axis.text.y = element_blank(),axis.ticks.y = element_blank())+
+  theme(axis.text.x= element_text(size=12, family="myFont", color="black", face= "bold.italic", vjust=0.5, hjust=0.5),
+        element_line(colour="black",size=1))+
+  geom_vline(aes(xintercept=0),linetype="dashed")+
+  #xlim(-0.35,0.5)+
+  xlab("Excess atom fraction 18O") +
+  ylab("OTUs") +##OTU用ylab("Ranked OTUs");genus用ylab("Genus")
+  ggtitle("N360_6DAY")+###N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+  theme(title= element_text(size=15, family="myFont", color="black", face= "bold", vjust=0.5, hjust=0.5))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_text(aes(label = Row.names,colour=Phylum1,x = 0.2))
+p9
+ggsave("./Fig/EAF_N360_9DAY.pdf",device=cairo_pdf,width=4,height=4)
+##N0_1DAY / N0_3DAY / N0_6DAY / N180_1DAY / N180_3DAY / N180_6DAY / N360_1DAY / N360_3DAY / N360_6DAY
+
+###### Combination Chart
+library(ggpubr)
+ggarrange(p7,p8,p9,ncol=3,nrow=1) 
+ggsave("./Fig/EAF_N360.pdf",device=cairo_pdf,width=8,height=4)
+
+ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,ncol=3,nrow=3)
+ggsave("./Fig/EAF_All.pdf",device=cairo_pdf,width=8,height=8)
+####
+########### Plotting birth rate/mortality/net growth rate####
+rm(list=ls())
+library("ggplot2")
+windowsFonts(myFont=windowsFont("Arial"))
+
+#### 
+birth<-read.csv("result-conf-re/re-DAY1-T/birth_rates_T_1DAY-conf-re.csv",header=T,row.names = 1,check.names=F)
+death<-read.csv("result-conf-re/re-DAY1-T/death_rates_T_1DAY-conf-re.csv",header=T,row.names = 1,check.names=F)
+growth<-read.csv("result-conf-re/re-DAY1-T/growth_rates_T_1DAY-conf-re.csv",header=T,row.names = 1,check.names=F)
+birth$OTU=rownames(birth)
+death$OTU=rownames(death)
+growth$OTU=rownames(growth)
+birth$group="birth_rates"
+death$group="death_rates"
+growth$group="growth_rates"
+
+growth=growth[order(growth$mean,decreasing =T),]
+N=c(1:nrow(growth))
+growth=cbind(growth,N)
+
+birth=merge(birth,growth[,c(which(colnames(growth)=="OTU"),which(colnames(growth)=="N"))],by.x="OTU",all=F)
+death=merge(death,growth[,c(which(colnames(growth)=="OTU"),which(colnames(growth)=="N"))],by.x="OTU",all=F)
+library(dplyr)
+aa=rbind(birth,death,growth)
+aa=rename(aa,'CL'=`95CL`)
+aa=rename(aa,'CU'=`95CU`)
+head(aa)
+
+p9<-ggplot(data=aa, aes(x=N, y=mean, group=group, shape=group,colour=group)) +
+  geom_errorbar(aes(ymin=CL,ymax=CU),width=.001,size=0.5)+
+  geom_line(size=0.7) + 
+  geom_point(size=1.2, fill="white") +
+  scale_shape_manual(values=c(21,21,21))+
+  scale_colour_manual(values=c("birth_rates"="#00bfc4","death_rates"="#e83631","growth_rates"="#3A398C"))+
+  theme_bw() +
+  theme(axis.text.x = element_blank(),axis.ticks.x = element_blank())+
+  theme(axis.text.y= element_text(size=12, family="myFont", color="black", face= "bold.italic", vjust=0.5, hjust=0.5),
+        element_line(colour="black",size=1))+
+  theme(legend.position="none")+
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        axis.line=element_line(colour="black",size=0.8))+
+  theme(legend.position="none")+
+  geom_hline(aes(yintercept=0),linetype="dashed",color="red")+
+  xlab("Ranked genus") +
+  ylab("r (day−1)") +
+  theme(axis.text= element_text(size=12, family="myFont", color="black", face= "bold", vjust=0.5, hjust=0.5),
+        element_line(colour="black",size=1))+
+  ggtitle("CK_1DAY")+
+  theme(title= element_text(size=15, family="myFont", color="black", face= "bold", vjust=0.5, hjust=0.5))+
+  theme(plot.title = element_text(hjust = 0.5))+
+  #ylim(-0.85,0.25)+### OTU用ylim(-0.75,0.3)；genus用ylim(-0.85,0.25)
+  
+  theme(legend.justification=c(1,1),# This item is very critical, if there is no this parameter, the legend will be offset, the reader can try
+        legend.position="bottom")#
+p9
+ggsave("./Fig/rate_CK_1DAY.pdf",device=cairo_pdf,width=4,height=4)
+
+###### Combination Chart
+library(ggpubr)
+ggarrange(p7,p8,p9,ncol=3,nrow=1) 
+ggsave("./Fig/rate_N360.pdf",device=cairo_pdf,width=8,height=3)
+
+ggarrange(p1,p2,p3,p4,p5,p6,p7,p8,p9,ncol=3,nrow=3)
+ggsave("./Fig/rate_All.pdf",device=cairo_pdf,width=8,height=8)
+####
+
+
+
+############Stacked cumulative graph of growth and death ###########
+rm(list=ls())
+sam1 <- read.table('clearing_data/samdata1.txt', sep='\t', header=T, row.names=1, comment.char='', check.names=F)
+##注意修改
+sam=sam1[which(sam1$day =="0"&sam1$fertilizer == "CW"), ]##T/CE/CW
+head(sam)
+
+##Screening OTU tables for relative abundance
+otu <- read.table('clearing_data/otutab.txt', sep='\t', header=T, comment.char='', check.names=F)
+rownames(otu) <- otu$`#OTU ID`
+otu <- otu[,-1]
+#Filter by abundance threshold
+otu <- otu[rowSums(otu)/sum(otu)>=(0.005/100),]
+otu=otu[,rownames(sam)]
+otu=otu[which(rowSums(otu[,1:3])>0),]
+otu<-as.matrix(otu)
+library("questionr")
+otu1 <- cprop(otu)
+rel_otu=as.data.frame.array(otu1[!rownames(otu1) %in% c("Total") , -which(colnames(otu1) %in% c("All"))])
+head(rel_otu)
+
+##Read comment information
+tax <- read.table('clearing_data/taxonomy-clean.txt', sep='\t', header=T, comment.char='', check.names=F)
+rownames(tax) <- tax$`OTUID`
+tax <- tax[,-1]
+tax=tax[rownames(rel_otu),]
+tax[1:5,1:5]
+pro=tax[which(tax$Phylum=="Proteobacteria"),]
+pro2=pro[,c(3,7)]
+names(pro2)<-c("Phylum","Species")
+pro2=as.data.frame(pro2)
+unpro=tax[which(tax$Phylum!="Proteobacteria"),]
+unpro2=unpro[,c(2,7)]
+unpro2=as.data.frame(unpro2)
+new_phy=rbind(pro2,unpro2) 
+names(new_phy)<-c("Phylum1","Species")
+head(new_phy)
+imp=merge(tax[,c(1:2)],new_phy,by="row.names",all=T)
+rownames(imp)=imp$Row.names
+
+tax_otu=merge(imp[,c(3:4)],rel_otu,by="row.names",all=F)
+rownames(tax_otu)=tax_otu$Row.names
+head(tax_otu)
+tax_otu=as.data.frame.array(tax_otu)
+##Calculate the absolute quantification of the classification unit in the initial state
+tax_otu[,4]=tax_otu[,4]*sam[1,2]
+tax_otu[,5]=tax_otu[,5]*sam[2,2]
+tax_otu[,6]=tax_otu[,6]*sam[3,2]
+
+###birth_rates/death_rates/growth_rates
+a<-read.csv("result-conf-re/re-DAY1-CW/death_rates_CW_1DAY-conf-re.csv",header=T,row.names = 1,check.names=F)
+b<-read.csv("result-conf-re/re-DAY3-CW/death_rates_CW_3DAY-conf-re.csv",header=T,row.names = 1,check.names=F)
+c<-read.csv("result-conf-re/re-DAY6-CW/death_rates_CW_6DAY-conf-re.csv",header=T,row.names = 1,check.names=F)
+
+a$OTU=rownames(a)
+b$OTU=rownames(b)
+c$OTU=rownames(c)
+
+d=merge(a[,c(1:3,which(colnames(a)=="OTU"))],b[,c(1:3,which(colnames(b)=="OTU"))],by="OTU",all=T)
+rate=merge(d,c[,c(1:3,which(colnames(c)=="OTU"))],by="OTU",all=T)
+colnames(rate)=c("OTU","day1_1","day1_2","day1_3","day3_1","day3_2","day3_3","day6_1","day6_2","day6_3")
+rownames(rate)=rate$OTU
+rate=rate[,-1]
+head(rate)
+
+Qrate=merge(rate,tax_otu,by="row.names",all=F)
+
+Qrate[,2]=Qrate[,2]*Qrate[,14]
+Qrate[,3]=Qrate[,3]*Qrate[,15]
+Qrate[,4]=Qrate[,4]*Qrate[,16]
+Qrate[,5]=Qrate[,5]*Qrate[,14]
+Qrate[,6]=Qrate[,6]*Qrate[,15]
+Qrate[,7]=Qrate[,7]*Qrate[,16]
+Qrate[,8]=Qrate[,8]*Qrate[,14]
+Qrate[,9]=Qrate[,9]*Qrate[,15]
+Qrate[,10]=Qrate[,10]*Qrate[,16]
+Qrate[is.na(Qrate)] <- 0
+head(Qrate)
+
+Phylum=aggregate(Qrate[,c(2:10)],list(Qrate$Phylum1),sum)
+rownames(Phylum)=Phylum$Group.1
+Phylum=Phylum[,-1]
+##Calculate the mean value
+Phylum$day1=rowMeans(Phylum[,1:3])
+Phylum$day3=rowMeans(Phylum[,4:6])
+Phylum$day6=rowMeans(Phylum[,7:9])
+Phylum=Phylum[,10:12]
+
+Phylum = Phylum[(order(-rowSums(Phylum[,]))), ]
+
+#other = colSums(Phylum[1:(dim(Phylum)[1]-11),])
+#Phylum = Phylum[(dim(Phylum)[1]-10):dim(Phylum)[1], ]
+#Phylum = rbind(Phylum,other)
+#rownames(Phylum)[12] = c("Low abundance")
+Phylum$tax=rownames(Phylum)
+
+library(reshape2)
+Phylum = as.data.frame(melt(Phylum, id.vars=c("tax")))
+
+write.csv(Phylum, "Phylum-CW.csv")
+Phylum1= read.csv("Phylum-zong-death.csv",header=T, row.names=1)
+Phylum1
+library(ggplot2)
+p = ggplot(Phylum1, aes(x=variable, y = value, fill = tax )) + 
+  geom_bar(stat = "identity",position="stack", width=1)+ 
+  theme(strip.background = element_blank())+
+  theme_bw() +##删除x轴坐标
+  xlab("")+ylab("death rate (16S rRNA gene copies/d)")+
+  ggtitle("zong-death")+
+  #theme_classic()+theme(axis.text.x=element_text(angle=45,vjust=1, hjust=1))+##将x轴坐标倾斜45°
+  scale_fill_manual(values =rev(c("A-Alphaproteobacteria"="#000000","B-Betaproteobacteria"="#00FF00","C-Gammaproteobacteria"="#FF8C00","D-Deltaproteobacteria"="#1E90FF","E-Acidobacteria"="#DC143C","F-Actinobacteria"="#00F0F0","G-Chloroflexi"="#228B22","H-Firmicutes"="#DF536B","I-Bacteroidetes"="#F5C710","J-Armatimonadetes"="#800000","K-Nitrospirae"="#008080","L-Verrucomicrobia"="#999933","M-Gemmatimonadetes"="#000180","N-Planctomycetes"="#AA3377","O-Ignavibacteriae"="#BBCCEE","P-candidate_division_WPS-1"="#222255","Q-Aminicenantes"="#FFFACD","R-Cyanobacteria"="#FFB6C1","S-Latescibacteria"="#8A2BE2","T-Unassigned"="#808080"))) +
+  theme(panel.grid = element_blank(), panel.background = element_rect(color = 'black', fill = 'transparent')) +
+  theme(legend.title = element_blank())
+p
+ggsave("./Fig/Copy_death_zong.pdf",device=cairo_pdf,width=12,height=8)
+###

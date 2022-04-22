@@ -1,0 +1,19 @@
+library(vegan)
+otu = read.table("Resample_0h.txt",sep="\t",header = T, row.names=1)
+bray.dist = vegdist(t(otu), method="bray")
+write.table(as.matrix(bray.dist), file = "bray.txt", sep="\t", col.names = NA)
+#The column represents the treatment and the row represents OTU
+
+library(ape)
+nmds=read.table("bray.txt",sep="\t",header = T, row.names=1)
+spe.h.pc=pcoa(nmds)#pcoa =cmdscale(nmds, k=2, eig=T)
+str(spe.h.pc)#记录一二轴解释率“Eigenvalues”
+spe.h.pcoa=spe.h.pc$vectors
+
+write.csv(spe.h.pcoa,"spe.h.pcoa.csv")
+library(ggplot2)
+spe.pcoa<-read.table(file="spe.h.txt",header=T,check.names=FALSE,sep="\t")
+pdf("16S-2.pdf",width=5,height=3.8)
+ggplot(spe.pcoa, aes(x=Axis.1, y=Axis.2, shape= Types, colour=Treatments)) + geom_point(size=5) +scale_shape_manual(values=c(16)) + scale_color_brewer(type="seq",palette="Set2") + theme_bw()+theme(
+  panel.background = element_rect(fill = "transparent",colour = NA))
+dev.off()

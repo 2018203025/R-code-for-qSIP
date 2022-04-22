@@ -1,0 +1,60 @@
+setwd("E:\\1 Knowledge\\R-run\\qSIP-增温增CO2\\aov")
+rm(list=ls())
+
+library(picante)
+
+phylo<-read.tree("[FastTree-rm1104.nwk") 
+
+#phylo1<-read.tree("[FastTree-1140.nwk") 
+
+#write.csv(phylo1$tip.label, "phylo1-tiplabel.csv")
+
+#write.csv(phylo$tip.label, "phylotiplabel.csv")
+
+
+a=cophenetic(phylo) 
+
+library(FactoMineR)
+
+phylo.pca=PCA(a)
+
+write.csv(phylo.pca$eig,"phylo-eig1.csv")
+write.csv(phylo.pca$var,"phylo-var1.csv")
+
+
+#write.csv(phylo$tip.label, "phylotiplabel.csv")
+
+
+data<-read.table("clipboard",header=T)
+
+data_t=t(data)
+
+zong.pca1=PCA(data_t)##
+
+#zong.pca1
+
+write.csv(zong.pca1$eig,"zong-eig.csv")##
+write.csv(zong.pca1$var,"zong-var.csv")##
+
+
+================================================
+ABC=read.table("clipboard", header=T)
+
+fit=aov(y~phylo1+phylo2+phylo3+phylo4+env1+env2, data=ABC)
+
+summary(fit)
+
+library(car)
+Anova(fit,type=3)
+
+
+#mod1=aov(y~factor(phylo1+phylo2+phylo3+phylo4+env1+env2), data=ABC)
+
+#summary(mod1)
+#Anova(mod1,type=3)
+
+#mod2=aov(y~factor(phylo1+phylo2+phylo3+phylo4)+env1+env2, data=ABC)
+
+#summary(mod2)
+
+

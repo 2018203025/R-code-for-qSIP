@@ -1,0 +1,35 @@
+
+spe= read.csv("Community-level Turnover/Assemblage_turnover.csv",header=T, row.names=1)
+spe
+library(ggplot2)
+df<-read.table("clipboard",header=T)
+df1<-read.table("clipboard",header=T)
+#p=ggplot(data=df,aes(x,y))+
+#  stat_summary(geom="bar",fun=mean,aes(fill=x))+
+  stat_summary(geom="errorbar",fun.min=min,fun.max=max,width=0.2)+
+  scale_y_continuous(expand=c(0,0))+
+  theme_bw()+
+  scale_fill_manual(values=c("#395FFF","#395FFF","#395FFF","#FFFF00","#FFFF00","#FFFF00","#00C800","#00C800","#00C800","#000000","#000000","#000000"))+theme(legend.title=element_blank())+labs(x="Treatment",y="Assemblage turnover rate (day−1)",title="all",caption="a1")+theme(panel.grid=element_blank())
+p
+ggsave("Assemblage_1.pdf",device=cairo_pdf,width=8,height=8)
+
+
+#geom_signif(comparisons=list(c("ACK_DAY1","T_DAY1"),c("ACK_DAY3","T_DAY3")),test='t.test',y_position=c(10,17,16),map_signif_level=T)
+
+================================================
+p = ggplot(df, aes(x=variable, y = rela_zong, fill = tax )) + 
+  geom_bar(stat = "identity",position="stack", width=0.8)+ 
+  theme(strip.background = element_blank())+
+  theme_bw() +##Remove background
+  xlab("proportion of three sorts in active OTUs")+ylab("")+
+  ggtitle("")+
+  #theme_classic()+theme(axis.text.x=element_text(angle=45,vjust=1, hjust=1))+##Tilt the x-axis coordinates by 45°
+  scale_fill_manual(values =rev(c("rare"="#FF4500","abun"="#4B0082","com"="#808080"))) +
+  theme(panel.grid = element_blank(), panel.background = element_rect(color = 'black', fill = 'transparent')) +
+  theme(legend.title = element_blank())
+p
+ggsave("three_sorts_taxa_in_zongOTU_-rela.pdf",device=cairo_pdf,width=8,height=8)
+###with top 30% growth rate
+
+
+

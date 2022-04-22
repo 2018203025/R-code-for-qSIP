@@ -1,0 +1,31 @@
+setwd("E:\\1Knowledge\\R-run\\qSIP-WP\\1响应\\系统发育保守性计算\\NTI")
+
+library(geiger)
+library(picante)
+library(phytools)
+library(ape)
+library(nlme)
+
+
+#anoleData <- read.csv("anolisDataAppende.csv", row.names = 1)
+rm(list=ls())
+anoleData <-  read.table("clipboard",header=T)
+str(anoleData)
+head(anoleData)
+
+anoleTree <- read.tree("网站-1373个OTUsGalaxy798-[FastTree.nwk].nwk")
+#plot(anoleTree)
+
+
+
+name.check(anoleTree,anoleData)
+anoleSize <- anoleData[, 1]
+names(anoleSize)=rownames(anoleData)
+#phylosignal(anoleSize,anoleData)
+
+phylosig(anoleTree,anoleSize,method = "K",test = T)
+
+phylosig(anoleTree,anoleSize,method = "lambda",test=T)
+
+
+

@@ -1,0 +1,12 @@
+#spe=read.csv("16S-rice-bray.csv",header=T,row.names=1)
+library(vegan)
+otu = read.table("bray.txt",sep="\t",header = T, row.names=1)
+bray.dist = vegdist(t(otu), method="bray")
+write.table(as.matrix(bray.dist), file = "bray.txt", sep="\t", col.names = NA)
+
+setwd("E:\\1 Knowledge\\R-run\\qSIP-WP2\\PCOA出生")
+spe=read.table("bray_birth_4tr负值改0.txt",sep="\t",header = T, row.names=1)
+spe=t(spe)
+env=read.table("env.txt",sep="\t",header = T, row.names=1)
+library(vegan)
+adonis(spe~Tr,data =env,permutations = 999,method="bray")
